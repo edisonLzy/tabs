@@ -207,6 +207,7 @@ const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => {
         {...restProps}
       >
         <TabNavListWrapper {...tabNavBarProps} renderTabBar={renderTabBar} />
+        {/* TabPanel */}
         <TabPanelList
           destroyInactiveTabPane={destroyInactiveTabPane}
           {...sharedProps}
