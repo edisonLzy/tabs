@@ -33,6 +33,7 @@ const OperationNode = React.forwardRef<HTMLDivElement, OperationNodeProps>((prop
   const {
     prefixCls,
     id,
+    // 隐藏的tabs
     tabs,
     locale,
     mobile,
@@ -78,6 +79,7 @@ const OperationNode = React.forwardRef<HTMLDivElement, OperationNodeProps>((prop
       selectedKeys={[selectedKey]}
       aria-label={dropdownAriaLabel !== undefined ? dropdownAriaLabel : 'expanded dropdown'}
     >
+      {/* 指定 callback 返回值的类型 */}
       {tabs.map<React.ReactNode>(tab => {
         const { closable, disabled, closeIcon, key, label } = tab;
         const removable = getRemovable(closable, closeIcon, editable, disabled);
@@ -186,6 +188,7 @@ const OperationNode = React.forwardRef<HTMLDivElement, OperationNodeProps>((prop
     [`${dropdownPrefix}-rtl`]: rtl,
   });
 
+  // 渲染更多按钮
   const moreNode: React.ReactNode = mobile ? null : (
     <Dropdown
       prefixCls={dropdownPrefix}

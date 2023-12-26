@@ -85,7 +85,10 @@ export default function useTouchMove(
     let mixed: number = 0;
     const absX = Math.abs(deltaX);
     const absY = Math.abs(deltaY);
+    // q: 为什么要判断 absX === absY ?
+    // a: 当滚动方向不明确时, 以上一次滚动方向为准
     if (absX === absY) {
+      // deltaX 为滚动偏移量
       mixed = lastWheelDirectionRef.current === 'x' ? deltaX : deltaY;
     } else if (absX > absY) {
       mixed = deltaX;
@@ -94,13 +97,16 @@ export default function useTouchMove(
       mixed = deltaY;
       lastWheelDirectionRef.current = 'y';
     }
-
+    
     if (onOffset(-mixed, -mixed)) {
+      // q: why need preventDefault?
+      // a: 
       e.preventDefault();
     }
   }
 
   // ========================= Effect =========================
+  // 当会触发多个事件监听函数的时候, 使用 ref 来保存函数, 避免每次都重新生成函数
   const touchEventsRef = useRef<{
     onTouchStart: TouchEventHandler;
     onTouchMove: TouchEventHandler;
@@ -123,11 +129,13 @@ export default function useTouchMove(
       touchEventsRef.current.onWheel(e);
     }
 
+    // 移动端触发
     document.addEventListener('touchmove', onProxyTouchMove, { passive: false });
     document.addEventListener('touchend', onProxyTouchEnd, { passive: false });
 
     // No need to clean up since element removed
     ref.current.addEventListener('touchstart', onProxyTouchStart, { passive: false });
+    // mac触摸板会触发 wheel 事件
     ref.current.addEventListener('wheel', onProxyWheel);
 
     return () => {

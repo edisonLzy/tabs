@@ -74,7 +74,7 @@ const getSize = (refObj: React.RefObject<HTMLElement>): SizeInfo => {
   // Use getBoundingClientRect to avoid decimal inaccuracy
   if (refObj.current) {
     const { width, height } = refObj.current.getBoundingClientRect();
-
+    // q: 这句代码作用是什么 ? 
     if (Math.abs(width - offsetWidth) < 1) {
       return [width, height];
     }
@@ -118,9 +118,11 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   const operationsRef = useRef<HTMLDivElement>(null);
   const innerAddButtonRef = useRef<HTMLButtonElement>(null);
 
+  // tabPosition 为 top/bottom 意味着 tab 会水平排列，此时需要监听水平方向的滚动
   const tabPositionTopOrBottom = tabPosition === 'top' || tabPosition === 'bottom';
-
+  // 水平滚动的偏移值
   const [transformLeft, setTransformLeft] = useSyncState(0, (next, prev) => {
+    // 调用 setTransformLeft的时候, 触发用户传递的 onTabScroll
     if (tabPositionTopOrBottom && onTabScroll) {
       onTabScroll({ direction: next > prev ? 'left' : 'right' });
     }
@@ -132,6 +134,7 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   });
 
   const [containerExcludeExtraSize, setContainerExcludeExtraSize] = useState<SizeInfo>([0, 0]);
+  // tabContentSize: 所有 tab 的宽度和
   const [tabContentSize, setTabContentSize] = useState<SizeInfo>([0, 0]);
   const [addSize, setAddSize] = useState<SizeInfo>([0, 0]);
   const [operationSize, setOperationSize] = useState<SizeInfo>([0, 0]);
@@ -144,12 +147,15 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
     containerExcludeExtraSize,
     tabPositionTopOrBottom,
   );
+  // 水平方向取 width,即 tabContentSize[0]
   const tabContentSizeValue = getUnitValue(tabContentSize, tabPositionTopOrBottom);
   const addSizeValue = getUnitValue(addSize, tabPositionTopOrBottom);
   const operationSizeValue = getUnitValue(operationSize, tabPositionTopOrBottom);
 
   const needScroll = containerExcludeExtraSizeValue < tabContentSizeValue + addSizeValue;
+
   const visibleTabContentValue = needScroll
+    // 这里可以先理解成 rc-tabs-nav-wrap的宽度 
     ? containerExcludeExtraSizeValue - operationSizeValue
     : containerExcludeExtraSizeValue - addSizeValue;
 
@@ -166,6 +172,9 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
     transformMin = 0;
     transformMax = Math.max(0, tabContentSizeValue - visibleTabContentValue);
   } else {
+    // ltr 向左移动是通过负的translateX来实现的.
+    // visibleTabContentValue: [.............]
+    // tabContentSizeValue:    [..............xxxxxx]
     transformMin = Math.min(0, visibleTabContentValue - tabContentSizeValue);
     transformMax = 0;
   }
@@ -196,8 +205,11 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   }
 
   useTouchMove(tabsWrapperRef, (offsetX, offsetY) => {
+
     function doMove(setState: React.Dispatch<React.SetStateAction<number>>, offset: number) {
       setState(value => {
+        // alignInRange: 保证 value 在 transformMin 和 transformMax 之间
+        // newValue: 已经滚动的距离 + 本次滚动的偏移量
         const newValue = alignInRange(value + offset);
         return newValue;
       });
@@ -235,11 +247,11 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   // Render tab node & collect tab offset
   const [visibleStart, visibleEnd] = useVisibleRange(
     tabOffsets,
-    // Container
+    // Container: 水平方向 可以理解成 rc-tabs-nav-wrap 的宽度 
     visibleTabContentValue,
-    // Transform
+    // Transform: 水平滚动的时候 使用 transformLeft
     tabPositionTopOrBottom ? transformLeft : transformTop,
-    // Tabs
+    // Tabs: tabs的宽度和
     tabContentSizeValue,
     // Add
     addSizeValue,
@@ -360,7 +372,9 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
 
   const onListHolderResize = useUpdate(() => {
     // Update wrapper records
+    // containerRef: div.rc-tabs-nav
     const containerSize = getSize(containerRef);
+    // extraLeftREf: div.rc-tabs-extra-content
     const extraLeftSize = getSize(extraLeftRef);
     const extraRightSize = getSize(extraRightRef);
     setContainerExcludeExtraSize([
@@ -401,6 +415,7 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   });
 
   // ========================= Effect ========================
+
   useEffect(() => {
     scrollToTab();
   }, [
@@ -442,8 +457,8 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
   return (
     <ResizeObserver onResize={onListHolderResize}>
       <div
-        ref={useComposeRef(ref, containerRef)}
         role="tablist"
+        ref={useComposeRef(ref, containerRef)}
         className={classNames(`${prefixCls}-nav`, className)}
         style={style}
         onKeyDown={() => {
@@ -465,6 +480,7 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
           >
             <ResizeObserver onResize={onListHolderResize}>
               <div
+                // tabList容器ref
                 ref={tabListRef}
                 className={`${prefixCls}-nav-list`}
                 style={{
@@ -483,6 +499,7 @@ const TabNavList = React.forwardRef<HTMLDivElement, TabNavListProps>((props, ref
                     visibility: hasDropdown ? 'hidden' : null,
                   }}
                 />
+                {/* 渲染下划线 */}
                 <div
                   className={classNames(`${prefixCls}-ink-bar`, {
                     [`${prefixCls}-ink-bar-animated`]: animated.inkBar,
